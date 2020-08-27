@@ -143,6 +143,7 @@ from ccxt.gemini import gemini                              # noqa: F401
 from ccxt.hbtc import hbtc                                  # noqa: F401
 from ccxt.hitbtc import hitbtc                              # noqa: F401
 from ccxt.hollaex import hollaex                            # noqa: F401
+from ccxt.hotbit import hotbit                              # noqa: F401
 from ccxt.huobijp import huobijp                            # noqa: F401
 from ccxt.huobipro import huobipro                          # noqa: F401
 from ccxt.huobiru import huobiru                            # noqa: F401
@@ -184,6 +185,7 @@ from ccxt.upbit import upbit                                # noqa: F401
 from ccxt.vaultoro import vaultoro                          # noqa: F401
 from ccxt.vbtc import vbtc                                  # noqa: F401
 from ccxt.wavesexchange import wavesexchange                # noqa: F401
+from ccxt.wbf import wbf                                    # noqa: F401
 from ccxt.whitebit import whitebit                          # noqa: F401
 from ccxt.xbtce import xbtce                                # noqa: F401
 from ccxt.xena import xena                                  # noqa: F401
@@ -267,6 +269,7 @@ exchanges = [
     'hbtc',
     'hitbtc',
     'hollaex',
+    'hotbit',
     'huobijp',
     'huobipro',
     'huobiru',
@@ -308,6 +311,7 @@ exchanges = [
     'vaultoro',
     'vbtc',
     'wavesexchange',
+    'wbf',
     'whitebit',
     'xbtce',
     'xena',

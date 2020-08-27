@@ -125,6 +125,7 @@ from ccxt.async_support.gemini import gemini                              # noqa
 from ccxt.async_support.hbtc import hbtc                                  # noqa: F401
 from ccxt.async_support.hitbtc import hitbtc                              # noqa: F401
 from ccxt.async_support.hollaex import hollaex                            # noqa: F401
+from ccxt.async_support.hotbit import hotbit                              # noqa: F401
 from ccxt.async_support.huobijp import huobijp                            # noqa: F401
 from ccxt.async_support.huobipro import huobipro                          # noqa: F401
 from ccxt.async_support.huobiru import huobiru                            # noqa: F401
@@ -166,6 +167,7 @@ from ccxt.async_support.upbit import upbit                                # noqa
 from ccxt.async_support.vaultoro import vaultoro                          # noqa: F401
 from ccxt.async_support.vbtc import vbtc                                  # noqa: F401
 from ccxt.async_support.wavesexchange import wavesexchange                # noqa: F401
+from ccxt.async_support.wbf import wbf                                    # noqa: F401
 from ccxt.async_support.whitebit import whitebit                          # noqa: F401
 from ccxt.async_support.xbtce import xbtce                                # noqa: F401
 from ccxt.async_support.xena import xena                                  # noqa: F401
@@ -249,6 +251,7 @@ exchanges = [
     'hbtc',
     'hitbtc',
     'hollaex',
+    'hotbit',
     'huobijp',
     'huobipro',
     'huobiru',
@@ -290,6 +293,7 @@ exchanges = [
     'vaultoro',
     'vbtc',
     'wavesexchange',
+    'wbf',
     'whitebit',
     'xbtce',
     'xena',
