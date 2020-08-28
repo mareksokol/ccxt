@@ -4,7 +4,7 @@
 
 # -----------------------------------------------------------------------------
 
-__version__ = '1.33.57'
+__version__ = '1.33.57a'
 
 # -----------------------------------------------------------------------------
 
@@ -97,6 +97,7 @@ from ccxt.async_support.coinbase import coinbase                          # noqa
 from ccxt.async_support.coinbaseprime import coinbaseprime                # noqa: F401
 from ccxt.async_support.coinbasepro import coinbasepro                    # noqa: F401
 from ccxt.async_support.coincheck import coincheck                        # noqa: F401
+from ccxt.async_support.coineal import coineal                            # noqa: F401
 from ccxt.async_support.coinegg import coinegg                            # noqa: F401
 from ccxt.async_support.coinex import coinex                              # noqa: F401
 from ccxt.async_support.coinfalcon import coinfalcon                      # noqa: F401
@@ -146,6 +147,7 @@ from ccxt.async_support.luno import luno                                  # noqa
 from ccxt.async_support.lykke import lykke                                # noqa: F401
 from ccxt.async_support.mercado import mercado                            # noqa: F401
 from ccxt.async_support.mixcoins import mixcoins                          # noqa: F401
+from ccxt.async_support.mxc import mxc                                    # noqa: F401
 from ccxt.async_support.oceanex import oceanex                            # noqa: F401
 from ccxt.async_support.okcoin import okcoin                              # noqa: F401
 from ccxt.async_support.okex import okex                                  # noqa: F401
@@ -223,6 +225,7 @@ exchanges = [
     'coinbaseprime',
     'coinbasepro',
     'coincheck',
+    'coineal',
     'coinegg',
     'coinex',
     'coinfalcon',
@@ -272,6 +275,7 @@ exchanges = [
     'lykke',
     'mercado',
     'mixcoins',
+    'mxc',
     'oceanex',
     'okcoin',
     'okex',

@@ -22,7 +22,7 @@
 
 # ----------------------------------------------------------------------------
 
-__version__ = '1.33.57'
+__version__ = '1.33.57a'
 
 # ----------------------------------------------------------------------------
 
@@ -115,6 +115,7 @@ from ccxt.coinbase import coinbase                          # noqa: F401
 from ccxt.coinbaseprime import coinbaseprime                # noqa: F401
 from ccxt.coinbasepro import coinbasepro                    # noqa: F401
 from ccxt.coincheck import coincheck                        # noqa: F401
+from ccxt.coineal import coineal                            # noqa: F401
 from ccxt.coinegg import coinegg                            # noqa: F401
 from ccxt.coinex import coinex                              # noqa: F401
 from ccxt.coinfalcon import coinfalcon                      # noqa: F401
@@ -164,6 +165,7 @@ from ccxt.luno import luno                                  # noqa: F401
 from ccxt.lykke import lykke                                # noqa: F401
 from ccxt.mercado import mercado                            # noqa: F401
 from ccxt.mixcoins import mixcoins                          # noqa: F401
+from ccxt.mxc import mxc                                    # noqa: F401
 from ccxt.oceanex import oceanex                            # noqa: F401
 from ccxt.okcoin import okcoin                              # noqa: F401
 from ccxt.okex import okex                                  # noqa: F401
@@ -241,6 +243,7 @@ exchanges = [
     'coinbaseprime',
     'coinbasepro',
     'coincheck',
+    'coineal',
     'coinegg',
     'coinex',
     'coinfalcon',
@@ -290,6 +293,7 @@ exchanges = [
     'lykke',
     'mercado',
     'mixcoins',
+    'mxc',
     'oceanex',
     'okcoin',
     'okex',
