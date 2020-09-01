@@ -23,7 +23,7 @@ module.exports = class wbf extends Exchange {
                 'fetchCurrencies': false,
                 'fetchTicker': true,
                 'fetchTickers': false,
-                'fetchOHLCV': false,
+                'fetchOHLCV': true,
                 'fetchOrderBook': true,
                 'fetchTrades': false,
             },
@@ -44,6 +44,7 @@ module.exports = class wbf extends Exchange {
                         'get_ticker',
                         'market_dept',
                         'common/symbols',
+                        'get_records'
                     ],
                 },
                 'private': {
@@ -108,6 +109,30 @@ module.exports = class wbf extends Exchange {
             });
         }
         return result;
+    }
+
+    async fetchOHLCV(symbol, timeframe = '5', since = undefined, limit = undefined, params = {}) {
+        const request = {
+            'symbol': symbol,
+            "period": timeframe
+        };
+        if (limit !== undefined) {
+            request['limit'] = limit;
+        }
+        if (since !== undefined) {
+            request['since'] = parseInt (since / 1000);
+        }
+        const response = await this.publicGetGetRecords(request);
+        const { data } = response;
+        // [
+        //     1595727000,  //Time，second
+        //     9674.4758,   //Open
+        //     9675.8867,   //High
+        //     9652.9081,   //Low
+        //     9654.2835,   //Close
+        //     369.67841    //Amount
+        // ],
+        return this.parseOHLCVs (data, undefined, timeframe, since, limit);
     }
 
     async fetchTicker (symbol, params = {}) {
@@ -316,3 +341,4 @@ module.exports = class wbf extends Exchange {
         }
     }
 };
+

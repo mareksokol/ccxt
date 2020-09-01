@@ -7,12 +7,12 @@ const { ArgumentsRequired, ExchangeError, OrderNotFound } = require ('./base/err
 
 //  ---------------------------------------------------------------------------
 
-module.exports = class coineal extends Exchange {
+module.exports = class bkex extends Exchange {
     describe () {
         return this.deepExtend (super.describe (), {
-            'id': 'coineal',
-            'name': 'Coineal',
-            'countries': ['US'],
+            'id': 'bkex',
+            'name': 'BKEX',
+            'countries': ['BVI'],
             'version': 'v1',
             'rateLimit': 1000,
             'has': {
@@ -29,27 +29,42 @@ module.exports = class coineal extends Exchange {
             },
             'urls': {
                 'api': {
-                    'public': 'https://exchange-open-api.coineal.com/open/api',
-                    'private': 'https://exchange-open-api.coineal.com/open/api',
+                    'public': 'https://api.bkex.com/v1',
+                    'private': 'https://api.bkex.com/v1/u',
                 },
-                'www': 'https://www.coineal.com',
+                'www': 'https://www.bkex.com',
                 'doc': [
-                    'https://www.coineal.com/static-page/api/en_US/api.html',
+                    'https://github.com/bkexexchange/bkex-official-api-docs/blob/master/api_EN.md',
                 ],
-                'fees': '',
+                'fees': 'https://www.bkex.com/help/instruction/33',
             },
             'api': {
                 'public': {
                     'get': [
-                        'get_ticker',
-                        'market_dept',
-                        'common/symbols',
-                        'get_records',
+                        'exchangeInfo',
+                        'q/depth',
+                        'q/deals',
+                        'q/ticker',
+                        'q/ticker/price',
+                        'q/kline',
                     ],
                 },
                 'private': {
                     'get': [
-                        'account/info',
+                        'trade/order/listUnfinished',
+                        'trade/order/history',
+                        'trade/order/unfinished/detail',
+                        'trade/order/finished/detail',
+                        'wallet/balance',
+                        'wallet/address',
+                        'wallet/withdraw',
+                        'wallet/depositRecord',
+                        'wallet/withdrawRecord',
+                    ],
+                    'post': [
+                        'trade/order/create',
+                        'trade/order/cancel',
+                        'trade/order/batchCreate',
                     ],
                 },
             },
@@ -63,30 +78,30 @@ module.exports = class coineal extends Exchange {
     }
 
     async fetchMarkets (params = {}) {
-        // {
-        //     "symbol": "btcusdt",
-        //     "count_coin": "usdt",
-        //     "amount_precision": 5,
-        //     "base_coin": "btc",
-        //     "price_precision": 2
-        // },
-        const response = await this.publicGetCommonSymbols (params);
+        const response = await this.publicGetExchangeInfo (params);
+        const data = this.safeValue (response, 'data');
+        const markets = this.safeValue (data, 'pairs');
+        const numMarkets = markets.length;
+        if (numMarkets < 1) {
+            throw new ExchangeError (this.id + ' publicGetExchangeInfo returned empty response: ' + this.json (markets));
+        }
         const result = [];
-        for (let i = 0; i < response['data'].length; i++) {
-            const market = response['data'][i];
-            const baseId = this.safeString (market, 'base_coin');
-            const quoteId = this.safeString (market, 'count_coin');
+        for (let i = 0; i < markets.length; i++) {
+            const market = markets[i];
+            const id = this.safeString (market, 'pair');
+            const baseId = id.split ('_')[0];
+            const quoteId = id.split ('_')[1];
             const base = this.safeCurrencyCode (baseId);
             const quote = this.safeCurrencyCode (quoteId);
-            const id = base + quote;
-            const symbol = base + quote;
+            const symbol = base + '/' + quote;
             const precision = {
-                'amount': this.safeInteger (market, 'amount_precision'),
-                'price': this.safeInteger (market, 'price_precision'),
+                'amount': this.safeInteger (market, 'amountPrecision'),
+                'price': this.safeInteger (market, 'pricePrecision') || this.safeInteger (market, 'defaultPrecision'),
             };
+            const minAmount = this.safeFloat (market, 'minimumTradeAmount');
             result.push ({
-                'id': id.toLowerCase (),
-                'symbol': symbol.toLowerCase (),
+                'id': id,
+                'symbol': symbol,
                 'base': base,
                 'quote': quote,
                 'baseId': baseId,
@@ -95,7 +110,7 @@ module.exports = class coineal extends Exchange {
                 'precision': precision,
                 'limits': {
                     'amount': {
-                        'min': undefined,
+                        'min': minAmount,
                         'max': undefined,
                     },
                     'price': {
@@ -116,39 +131,52 @@ module.exports = class coineal extends Exchange {
     async fetchTicker (symbol, params = {}) {
         await this.loadMarkets ();
         const timestamp = this.milliseconds ();
+        const market = this.market (symbol);
         const request = this.extend ({
-            'symbol': symbol,
+            'pair': this.safeString (market, 'id'),
         }, params);
-        const response = await this.publicGetGetTicker (request);
+        const response = await this.publicGetQTicker (request);
         const ticker = this.safeValue (response, 'data');
         return {
             'symbol': symbol,
             'timestamp': timestamp,
             'datetime': this.iso8601 (timestamp),
-            'high': this.safeFloat (ticker, 'high'),
-            'low': this.safeFloat (ticker, 'low'),
-            'bid': this.safeFloat (ticker, 'buy'),
+            'high': this.safeFloat (ticker, 'h'),
+            'low': this.safeFloat (ticker, 'l'),
+            'bid': undefined,
             'bidVolume': undefined,
-            'ask': this.safeFloat (ticker, 'sell'),
+            'ask': undefined,
             'askVolume': undefined,
             'vwap': undefined,
             'previousClose': undefined,
-            'open': undefined,
-            'close': undefined,
-            'last': this.safeFloat (ticker, 'last'),
+            'open': this.safeFloat (ticker, 'o'),
+            'close': this.safeFloat (ticker, 'c'),
+            'last': this.safeFloat (ticker, 'c'),
             'percentage': undefined,
-            'change': undefined,
+            'change': this.safeFloat (ticker, 'r'),
             'average': undefined,
-            'baseVolume': this.safeFloat (ticker, 'vol'),
+            'baseVolume': this.safeFloat (ticker, 'a'),
             'quoteVolume': undefined,
             'info': ticker,
         };
     }
 
-    async fetchOHLCV (symbol, timeframe = '5', since = undefined, limit = undefined, params = {}) {
+    async fetchOrderBook (symbol, limit = undefined, params = {}) {
+        await this.loadMarkets ();
         const request = {
-            'symbol': symbol,
-            "period": timeframe
+            'pair': this.marketId (symbol),
+        };
+        if (limit !== undefined) {
+            request['size'] = limit;
+        }
+        const response = await this.publicGetQDepth (this.extend (request, params));
+        const data = this.safeValue (response, 'data');
+        return this.parseOrderBook (data, undefined, 'bids', 'asks', 'price', 'amt');
+    }
+
+    async fetchOHLCV (symbol, timeframe = '5m', since = undefined, limit = undefined, params = {}) {
+        const request = {
+            'pair': symbol,
         };
         if (limit !== undefined) {
             request['limit'] = limit;
@@ -156,36 +184,35 @@ module.exports = class coineal extends Exchange {
         if (since !== undefined) {
             request['since'] = parseInt (since / 1000);
         }
-        const response = await this.publicGetGetRecords(request);
+        const response = await this.publicGetQKline(request);
         const { data } = response;
-        // 'code': '0', 
-        // 'msg': 'suc',
-        // 'data': [
-        //             [
-        //                 1529387760,  //Time Stamp
-        //                 7585.41,  //Opening Price
-        //                 7585.41,  //Highest Price
-        //                 7585.41,  //Lowest Price
-        //                 7585.41,  //Closing Price
-        //                 0.0       //Transaction Volume
-        //             ]
-        //         ]
-        
+        // [
+        //     {
+        //       "t": 1536636600, //time
+        //       "c": 990.0, //closing price
+        //       "o": 10.0, //opening price
+        //       "h": 990.0, //the highest price
+        //       "l": 10.0, //the lowest price
+        //       "a": 262.25 //trading amount
+        //     },
+        //     {
+        //       "t": 1536637500, //time
+        //       "c": 4990.0, //closing price
+        //       "o": 10.0, //opening price
+        //       "h": 4990.0, //the highest price
+        //       "l": 10.0, //the lowest price
+        //       "a": 6165.05 //trading amount
+        //     },
+        //     {
+        //       "t": 1536638400, //time
+        //       "c": 0.0, //closing price
+        //       "o": 0.0, //opening price
+        //       "h": 0.0, //the highest price
+        //       "l": 0.0, //the lowest price
+        //       "a": 0.0 //trading amount
+        //     }
+        //   ]
         return this.parseOHLCVs (data, undefined, timeframe, since, limit);
-    }
-
-    async fetchOrderBook (symbol, limit = undefined, params = {}) {
-        await this.loadMarkets ();
-        const request = {
-            'symbol': this.marketId (symbol),
-            'type': 'step0',
-        };
-        if (limit !== undefined) {
-            request['size'] = limit;
-        }
-        const response = await this.publicGetMarketDept (this.extend (request, params));
-        const data = this.safeValue (response, 'data');
-        return this.parseOrderBook (data.tick, data.tick.time, 'bids', 'asks');
     }
 
     async fetchBalance (params = {}) {
@@ -336,3 +363,4 @@ module.exports = class coineal extends Exchange {
         }
     }
 };
+
