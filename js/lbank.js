@@ -243,6 +243,39 @@ module.exports = class lbank extends Exchange {
         };
     }
 
+    async fetchOHLCV (symbol, timeframe = '5m', since = 1000, limit = 1000, params = {}) {
+        await this.loadMarkets ();
+        const market = this.market (symbol);
+        if (since === undefined) {
+            throw new ArgumentsRequired (this.id + ' fetchOHLCV requires a `since` argument');
+        }
+        if (limit === undefined) {
+            throw new ArgumentsRequired (this.id + ' fetchOHLCV requires a `limit` argument');
+        }
+        const request = {
+            'symbol': market['id'],
+            'type': this.timeframes[timeframe],
+            'size': limit,
+            'time': parseInt (since / 1000),
+        };
+        const response = await this.publicGetKline (this.extend (request, params));
+        //
+        //     [
+        //         [1590969600,0.02451657,0.02452675,0.02443701,0.02447814,238.38210000],
+        //         [1590969660,0.02447814,0.02449883,0.02443209,0.02445973,212.40270000],
+        //         [1590969720,0.02445973,0.02452067,0.02445909,0.02446151,266.16920000],
+        //     ]
+        //
+        // Field	Description
+        // 1482311500	Timestamp
+        // 5423.23	Open Price
+        // 5472.80	Highest Price
+        // 5516.09	Lowest Price
+        // 5462	Close Price
+        // 234.3250	Trading Volume
+        return this.parseOHLCVs (response, market, timeframe, since, limit);
+    }
+
     async fetchTicker (symbol, params = {}) {
         await this.loadMarkets ();
         const market = this.market (symbol);
