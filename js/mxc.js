@@ -1,3 +1,4 @@
+
 'use strict';
 
 // ---------------------------------------------------------------------------
@@ -13,7 +14,7 @@ module.exports = class mxc extends Exchange {
             'id': 'mxc',
             'name': 'MXC',
             'countries': [ 'CN' ],
-            'version': 'v1',
+            'version': 'v2',
             'rateLimit': 1000,
             'has': {
                 'CORS': false,
@@ -50,8 +51,8 @@ module.exports = class mxc extends Exchange {
             'urls': {
                 'logo': '',
                 'api': {
-                    'public': 'https://www.mxc.ceo/open/api/v1/data/',
-                    'private': 'https://www.mxc.ceo/open/api/v1/private/',
+                    'public': 'https://www.mxc.ceo/open/api/v2/',
+                    'private': 'https://www.mxc.ceo/open/api/v2/private',
                 },
                 'www': 'https://mxc.ceo/',
                 'doc': 'https://github.com/mxcdevelop/APIDoc',
@@ -63,12 +64,12 @@ module.exports = class mxc extends Exchange {
             'api': {
                 'public': {
                     'get': [
-                        'markets',
-                        'markets_info',
-                        'depth',
+                        'market/ticker',
+                        'market/symbols',
+                        'market/depth',
                         'history',
                         'ticker',
-                        'kline',
+                        'market/kline',
                     ],
                 },
                 'private': {
@@ -88,6 +89,11 @@ module.exports = class mxc extends Exchange {
                     ],
                 },
             },
+            'requiredCredentials': {
+                'apiKey': true,
+            },
+            'apiKey': 'mx0YNT9xwPUufyhyRq',
+            'secret': 'c3e978f422574f4788d78b3397774ef9',
             'fees': {
                 'trading': {
                     'tierBased': true,
@@ -115,8 +121,10 @@ module.exports = class mxc extends Exchange {
         });
     }
 
-    async fetchMarkets (params = {}) {
-        const response = await this.publicGetMarketsInfo (params);
+    async fetchMarkets(params = {}) {
+        const response = await this.publicGetMarketSymbols(this.extend({
+            'api_key': this.apiKey,
+        }, params));
         const markets = this.safeValue (response, 'data');
         if (!markets) {
             throw new ExchangeError (this.id + ' fetchMarkets got an unrecognized response');
@@ -140,17 +148,17 @@ module.exports = class mxc extends Exchange {
             }
             const base = this.safeCurrencyCode (baseId);
             const quote = this.safeCurrencyCode (quoteId);
-            const symbol = base + '/' + quote;
+            const symbol = base + '_' + quote;
             const precision = {
                 'amount': 8,
-                'price': details['priceScale'],
+                'price': details['price_scale'],
             };
             const amountLimits = {
-                'min': details['minAmount'],
-                'max': undefined,
+                'min': details['min_amount'],
+                'max': details['max_amount'],
             };
             const priceLimits = {
-                'min': Math.pow (10, -details['priceScale']),
+                'min': Math.pow (10, -details['price_scale']),
                 'max': undefined,
             };
             const defaultCost = amountLimits['min'] * priceLimits['min'];
@@ -174,8 +182,8 @@ module.exports = class mxc extends Exchange {
                 'quoteId': quoteId,
                 'info': market,
                 'active': active,
-                'maker': details['sellFeeRate'],
-                'taker': details['buyFeeRate'],
+                'maker': details['maker_fee_rate'],
+                'taker': details['taker_fee_rate'],
                 'precision': precision,
                 'limits': limits,
             });
@@ -207,9 +215,10 @@ module.exports = class mxc extends Exchange {
         await this.loadMarkets ();
         const request = {
             'depth': 5,
-            'market': this.marketId (symbol),
+            'symbol': symbol,
+            'api_key': this.apiKey
         };
-        const response = await this.publicGetDepth (this.extend (request, params));
+        const response = await this.publicGetMarketDepth (this.extend (request, params));
         const orderbook = this.safeValue (response, 'data');
         return this.parseOrderBook (orderbook, undefined, 'bids', 'asks', 'price', 'quantity');
     }
@@ -223,18 +232,16 @@ module.exports = class mxc extends Exchange {
             parseFloat (ohlcv[3]), // h
             parseFloat (ohlcv[4]), // l
             parseFloat (ohlcv[5]), // v
+            parseFloat (ohlcv[6]), // a
         ];
     }
 
-    async fetchOHLCV (symbol, timeframe = '1m', since = undefined, limit = undefined, params = {}) {
-        await this.loadMarkets ();
-        const market = this.market (symbol);
-        const now = this.milliseconds ();
+    async fetchOHLCV (symbol, timeframe = '5m', since = undefined, limit = undefined, params = {}) {
         const periodDurationInSeconds = this.parseTimeframe (timeframe);
         const request = {
-            'market': this.marketId (symbol),
+            'symbol': symbol,
             'interval': timeframe,
-            'startTime': parseInt (now / 1000 - periodDurationInSeconds),
+            'api_key': this.apiKey
         };
         // max limit = 1001
         if (limit !== undefined) {
@@ -244,29 +251,41 @@ module.exports = class mxc extends Exchange {
         if (since !== undefined) {
             request['startTime'] = parseInt (since / 1000);
         }
-        const response = await this.publicGetKline (this.extend (request, params));
-        //        ordering: Ts, O, C, H, L, V
-        //     {
-        //         "code": 200,
-        //         "data": [
-        //             [ "TS", "o", "c", "h", "l", "v" ],
-        //         ]
-        //     }
-        //
+        const response = await this.publicGetMarketKline (this.extend (request, params));
+        // "data": [
+        //     [
+        //         1557728040,    //timestamp in seconds
+        //         "7054.7",      //open
+        //         "7056.26",     //close
+        //         "7056.29",     //high
+        //         "7054.16",     //low
+        //         "9.817734",    //vol
+        //         "6926.521"     //amount
+        //     ],
+        //     [
+        //         1557728100,
+        //         "7056.26",
+        //         "7042.17",
+        //         "7056.98",
+        //         "7042.16",
+        //         "23.69423",
+        //         "1677.931"
+        //     ]
+        // ]
         const data = this.safeValue (response, 'data', []);
-        return this.parseOHLCVs (data, market, timeframe, since, limit);
+        return this.parseOHLCVs (data, undefined, timeframe, since, limit);
     }
 
-    parseTicker (ticker, market = undefined) {
+    parseTicker(ticker, market = undefined) {
         const timestamp = this.milliseconds ();
         let symbol = undefined;
         if (market) {
             symbol = market['symbol'];
         }
-        const last = this.safeFloat (ticker, 'last');
-        const percentage = this.safeFloat (ticker, 'percentChange');
-        const open = this.safeFloat (ticker, 'open');
-        let change = undefined;
+        const last = this.safeFloat (ticker[0], 'last');
+        const percentage = undefined;
+        const open = this.safeFloat (ticker[0], 'open');
+        let change = this.safeFloat (ticker[0], 'change_rate');
         let average = undefined;
         if ((last !== undefined) && (percentage !== undefined)) {
             change = last - open;
@@ -276,11 +295,11 @@ module.exports = class mxc extends Exchange {
             'symbol': symbol,
             'timestamp': timestamp,
             'datetime': this.iso8601 (timestamp),
-            'high': this.safeFloat (ticker, 'high'),
-            'low': this.safeFloat (ticker, 'low'),
-            'bid': this.safeFloat (ticker, 'buy'),
+            'high': this.safeFloat (ticker[0], 'high'),
+            'low': this.safeFloat (ticker[0], 'low'),
+            'bid': this.safeFloat (ticker[0], 'bid'),
             'bidVolume': undefined,
-            'ask': this.safeFloat (ticker, 'sell'),
+            'ask': this.safeFloat (ticker[0], 'ask'),
             'askVolume': undefined,
             'vwap': undefined,
             'open': open,
@@ -290,15 +309,17 @@ module.exports = class mxc extends Exchange {
             'change': change,
             'percentage': percentage,
             'average': average,
-            'baseVolume': this.safeFloat (ticker, 'volume'), // gateio has them reversed
+            'baseVolume': this.safeFloat (ticker[0], 'volume'), // gateio has them reversed
             'quoteVolume': undefined,
             'info': ticker,
         };
     }
 
-    async fetchTickers (symbols = undefined, params = {}) {
-        await this.loadMarkets ();
-        const response = await this.publicGetTicker (params);
+    async fetchTickers (symbol = undefined, params = {}) {
+        const request = this.extend ({
+            'symbol': symbol,
+        }, params);
+        const response = await this.publicGetMarketTicker (request);
         const result = {};
         const data = this.safeValue (response, 'data', []);
         const ids = Object.keys (data);
@@ -317,18 +338,18 @@ module.exports = class mxc extends Exchange {
             if (id in this.markets_by_id) {
                 market = this.markets_by_id[id];
             }
-            result[symbol] = this.parseTicker (data[id], market);
+            result[symbol] = this.parseTicker (data[id], undefined);
         }
         return result;
     }
 
     async fetchTicker (symbol, params = {}) {
-        await this.loadMarkets ();
-        const market = this.market (symbol);
-        const ticker = await this.publicGetTicker (this.extend ({
-            'market': this.marketId (symbol),
+        const response = await this.publicGetMarketTicker(this.extend({
+            'api_key': this.apiKey,
+            'symbol': symbol,
         }, params));
-        return this.parseTicker (ticker, market);
+        const ticker = this.safeValue (response, 'data');
+        return this.parseTicker (ticker, undefined);
     }
 
     parseTrade (trade, market = undefined) {
