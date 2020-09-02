@@ -93,7 +93,6 @@ module.exports = class mxc extends Exchange {
                 'apiKey': true,
             },
             'apiKey': 'mx0YNT9xwPUufyhyRq',
-            'secret': 'c3e978f422574f4788d78b3397774ef9',
             'fees': {
                 'trading': {
                     'tierBased': true,
