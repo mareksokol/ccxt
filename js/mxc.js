@@ -52,7 +52,7 @@ module.exports = class mxc extends Exchange {
                 'logo': '',
                 'api': {
                     'public': 'https://www.mxc.ceo/open/api/v2/',
-                    'private': 'https://www.mxc.ceo/open/api/v2/private',
+                    'private': 'https://www.mxc.ceo/open/api/v2/private/',
                 },
                 'www': 'https://mxc.ceo/',
                 'doc': 'https://github.com/mxcdevelop/APIDoc',
