@@ -150,17 +150,17 @@ module.exports = class mxc extends Exchange {
             const symbol = base + '_' + quote;
             const precision = {
                 'amount': 8,
-                'price': details['price_scale'],
+                'price': details.price_scale,
             };
             const amountLimits = {
-                'min': details['min_amount'],
-                'max': details['max_amount'],
+                'min': details.min_amount,
+                'max': details.max_amount,
             };
             const priceLimits = {
-                'min': Math.pow (10, -details['price_scale']),
+                'min': Math.pow (10, -details.price_scale),
                 'max': undefined,
             };
-            const defaultCost = amountLimits['min'] * priceLimits['min'];
+            const defaultCost = amountLimits.min * priceLimits.min;
             const minCost = this.safeFloat (this.options['limits']['cost']['min'], quote, defaultCost);
             const costLimits = {
                 'min': minCost,
@@ -181,8 +181,8 @@ module.exports = class mxc extends Exchange {
                 'quoteId': quoteId,
                 'info': market,
                 'active': active,
-                'maker': details['maker_fee_rate'],
-                'taker': details['taker_fee_rate'],
+                'maker': details.maker_fee_rate,
+                'taker': details.taker_fee_rate,
                 'precision': precision,
                 'limits': limits,
             });
@@ -235,7 +235,8 @@ module.exports = class mxc extends Exchange {
         ];
     }
 
-    async fetchOHLCV (symbol, timeframe = '5m', since = undefined, limit = undefined, params = {}) {
+    async fetchOHLCV(symbol, timeframe = '5m', since = undefined, limit = undefined, params = {}) {
+        this.fetchMarkets()
         const periodDurationInSeconds = this.parseTimeframe (timeframe);
         const request = {
             'symbol': symbol,
